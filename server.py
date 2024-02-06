@@ -24,7 +24,7 @@ def on_open(ws):
 def on_message(ws, message):
     current_event = json.loads(message)[0]
     if current_event.get("T") == "n":
-        newNews(current_event)  # Assuming newNews is adapted to handle Python dictionaries
+        new_news(current_event)  # Assuming newNews is adapted to handle Python dictionaries
 
 def on_error(ws, error):
     print(f"Error: {error}")
