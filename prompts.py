@@ -1,6 +1,4 @@
-# Define the constant
-header_prompt = "Only respond with a number from 1-100 detailing the impact of the headline."
+header_prompt = "Only respond with a number from -100 to 100 detailing the impact of the news story"
 
-# Define the function
-def get_news_review(h):
-    return f"Given the headline '{h}', show me a number from 1-100 detailing the impact of this headline."
+def get_news_review(h, s, ticker):
+    return f"Given the stock {ticker}, headline '{h}', and summary ${s} show me a number from -100 to 100 detailing the impact of the news story with -100 being that the story will strongly negativly imapct the stock, 0 being it will have no impact on the stock and 100 being a strong positive impact"

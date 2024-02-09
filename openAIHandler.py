@@ -1,19 +1,17 @@
+from openai import OpenAI
 import os
-import requests
+
+client = OpenAI()
 
 def send_to_openai(body):
     try:
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            },
-            json=body  # In requests, you can use the json parameter to automatically encode your dictionary to JSON
-        )
-        if response and response.ok:
-            jsoned = response.json()
-            return jsoned['choices'][0]['message']['content']
+        response = client.chat.completions.create( 
+            model=os.environ.get("OPEN_AI_VERSION"),
+            messages=body
+            )
+        
+        if response:
+            return response.choices[0].message.content
         else:
             return False
     except Exception as e:

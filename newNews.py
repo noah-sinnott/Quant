@@ -1,28 +1,46 @@
-from alpacaHandler import buy_stock, sell_all_stock
+from alpacaHandler import buy_stock, sell_all_stock, check_fractional_trading
 from openAIHandler import send_to_openai 
 from prompts import get_news_review, header_prompt
 import os
+import json
 
-async def new_news(current_event):
+def new_news(current_event):
     company_impact = 0
+    if len(current_event['symbols']) != 1:
+        return
+    
+    ticker_symbol = current_event['symbols'][0]
 
-    api_request_body = {
-        "model": os.environ.get("OPEN_AI_VERSION"),
-        "messages": [
+    if check_fractional_trading(ticker_symbol) == False: 
+        return
+
+    api_request_body = [
             {"role": "system", "content": header_prompt},
-            {"role": "user", "content": get_news_review(current_event['headline'])}
+            {"role": "user", "content": get_news_review(current_event["headline"], current_event["summary"], ticker_symbol)}
         ]
-    }
 
-    temp = await send_to_openai(api_request_body)
+    temp = send_to_openai(api_request_body)
+    
     if not temp:
         return
 
     company_impact = int(temp)
 
-    ticker_symbol = current_event['symbols'][0]
+    print(current_event['headline'], ticker_symbol, company_impact, current_event['symbols'])
+    
+    reasoning = {
+        "rating": company_impact,
+        "newsId": current_event["id"]
+    }
+    json_string = json.dumps(reasoning)
 
-    if company_impact >= 70:
-        buy_stock(ticker_symbol, 1)
-    elif company_impact <= 30:
+    print(json_string)
+
+    if company_impact >= 100:
+        buy_stock(ticker_symbol, 20, json_string)
+    elif company_impact >= 90:
+        buy_stock(ticker_symbol, 10, json_string)
+    elif company_impact >= 80:
+        buy_stock(ticker_symbol, 5, json_string)
+    elif company_impact <= -50:
         sell_all_stock(ticker_symbol)

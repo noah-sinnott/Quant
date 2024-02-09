@@ -1,11 +1,12 @@
 import json
 import os
-from websocket import create_connection, WebSocketApp
-from newNews import new_news 
 from dotenv import load_dotenv
-import os
 
 load_dotenv()  
+
+from websocket import create_connection, WebSocketApp
+from newNews import new_news 
+import os
 
 def on_open(ws):
     print("Websocket connected!")
@@ -24,13 +25,16 @@ def on_open(ws):
 def on_message(ws, message):
     current_event = json.loads(message)[0]
     if current_event.get("T") == "n":
-        new_news(current_event)  # Assuming newNews is adapted to handle Python dictionaries
+        new_news(current_event)  
 
 def on_error(ws, error):
     print(f"Error: {error}")
 
-def on_close(ws):
+def on_close(ws, close_status_code, close_reason):
     print("### closed ###")
+    print(f"Close Status Code: {close_status_code}")
+    print(f"Close Reason: {close_reason}")
+
 
 if __name__ == "__main__":
     ws_url = "wss://stream.data.alpaca.markets/v1beta1/news"
