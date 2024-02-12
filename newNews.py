@@ -1,4 +1,4 @@
-from alpacaHandler import buy_stock, sell_all_stock, check_fractional_trading
+from alpacaHandler import buy_stock, sell_all_stock, get_asset
 from openAIHandler import send_to_openai 
 from prompts import get_news_review, header_prompt
 import os
@@ -11,8 +11,12 @@ def new_news(current_event):
     
     ticker_symbol = current_event['symbols'][0]
 
-    if check_fractional_trading(ticker_symbol) == False: 
+
+    asset = get_asset(ticker_symbol)
+
+    if asset.fractionable == False:
         return
+      
 
     api_request_body = [
             {"role": "system", "content": header_prompt},
@@ -25,8 +29,6 @@ def new_news(current_event):
         return
 
     company_impact = int(temp)
-
-    print(current_event['headline'], ticker_symbol, company_impact, current_event['symbols'])
     
     reasoning = {
         "rating": company_impact,
@@ -34,8 +36,7 @@ def new_news(current_event):
     }
     json_string = json.dumps(reasoning)
 
-    print(json_string)
-
+    print(ticker_symbol, company_impact)
     if company_impact >= 100:
         buy_stock(ticker_symbol, 20, json_string)
     elif company_impact >= 90:

@@ -1,5 +1,3 @@
-increase trade over period of time, x increase in y time means increase position
-
 add in shorts
 
 use ai to review graphs
@@ -9,8 +7,6 @@ new news sources
 market close tracker  
 
 overnight new stores
-
-add in stop losses 
 
 liquidate largest negatives when more money needed for new trades
 

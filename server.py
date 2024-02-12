@@ -1,15 +1,16 @@
 import json
 import os
-from dotenv import load_dotenv
+import threading
 
+from dotenv import load_dotenv
 load_dotenv()  
 
-from websocket import create_connection, WebSocketApp
+from websocket import WebSocketApp
 from newNews import new_news 
-import os
+from positionManagment import position_managment
 
-def on_open(ws):
-    print("Websocket connected!")
+def on_news_ws_open(ws):
+    print("News Websocket connected!")
     auth_msg = json.dumps({
         "action": "auth",
         "key": os.environ['APCA_API_KEY_ID'],
@@ -18,14 +19,36 @@ def on_open(ws):
     ws.send(auth_msg)
     subscribe_msg = json.dumps({
         "action": "subscribe",
-        "news": ["*"]
+        "news": ["*"],
     })
     ws.send(subscribe_msg)
 
-def on_message(ws, message):
-    current_event = json.loads(message)[0]
-    if current_event.get("T") == "n":
-        new_news(current_event)  
+# def on_market_ws_open(ws):
+#     print("Market Websocket connected!")
+#     auth_msg = json.dumps({
+#         "action": "auth",
+#         "key": os.environ['APCA_API_KEY_ID'],
+#         "secret": os.environ['APCA_API_SECRET_KEY']
+#     })
+#     ws.send(auth_msg)
+#     subscribe_msg = json.dumps({
+#         "action": "subscribe",
+#         "statuses": ["*"] 
+#     })
+#     ws.send(subscribe_msg)
+
+def on_news_message(ws, message):
+    messages = json.loads(message)
+    for current_event in messages:
+        if current_event.get("T") == "n":
+            new_news(current_event) 
+
+# def on_market_message(ws, message):
+#     messages = json.loads(message)
+#     print(messages)
+#     for current_event in messages:
+#         if current_event.get("T") == "n":
+#             new_news(current_event) 
 
 def on_error(ws, error):
     print(f"Error: {error}")
@@ -36,11 +59,39 @@ def on_close(ws, close_status_code, close_reason):
     print(f"Close Reason: {close_reason}")
 
 
+
+def run_news_ws():
+    news_ws_url = "wss://stream.data.alpaca.markets/v1beta1/news"
+    news_ws = WebSocketApp(news_ws_url,
+                           on_open=on_news_ws_open,
+                           on_message=on_news_message,
+                           on_error=on_error,
+                           on_close=on_close)
+    news_ws.run_forever()
+
+# def run_market_ws():
+#     market_ws_url = "wss://stream.data.alpaca.markets/v2/iex"
+#     market_ws = WebSocketApp(market_ws_url,
+#                              on_open=on_market_ws_open,
+#                              on_message=on_market_message,
+#                              on_error=on_error,
+#                              on_close=on_close)
+#     market_ws.run_forever()
+
+
+
 if __name__ == "__main__":
-    ws_url = "wss://stream.data.alpaca.markets/v1beta1/news"
-    ws = WebSocketApp(ws_url,
-                      on_open=on_open,
-                      on_message=on_message,
-                      on_error=on_error,
-                      on_close=on_close)
-    ws.run_forever()
+    # position_managment()
+    # run_news_ws()
+    # run_market_ws()
+    news_thread = threading.Thread(target=run_news_ws,daemon=True)
+    position_thread = threading.Thread(target=position_managment,daemon=True)
+    # market_thread = threading.Thread(target=run_market_ws)
+    
+    news_thread.start()
+    position_thread.start()
+    # market_thread.start()
+
+    news_thread.join()
+    position_thread.join()
+    # market_thread.join()
