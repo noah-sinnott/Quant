@@ -1,7 +1,12 @@
 from alpaca_trade_api import REST
 import os
+import requests
 
 alpaca = REST(os.environ['APCA_API_KEY_ID'], os.environ['APCA_API_SECRET_KEY'])
+
+def get_news (start, end):
+    print(start, end)
+    return alpaca.get_news(start=start, end=end, limit=10, symbol=["*"])
 
 # async def on_order_update(order):
 #     if order.event == 'fill': 

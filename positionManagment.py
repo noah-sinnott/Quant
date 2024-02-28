@@ -3,37 +3,69 @@ from alpacaHandler import get_all_positions, get_last_order_details, buy_stock, 
 import time
 from datetime import datetime, timedelta, timezone
 import math
+import os
 
+POSITION_MANAGMENT_SELL_AT = float(os.environ.get('POSITION_MANAGMENT_SELL_AT', -2))
+POSITION_MANAGENT_BUY_DAY_MINIMUM = float(os.environ.get('POSITION_MANAGENT_BUY_DAY_MINIMUM', 1))
+POSITION_MANAGENT_BUY_ALL_TIME_MINIMUM = float(os.environ.get('POSITION_MANAGENT_BUY_ALL_TIME_MINIMUM', 5))
+POSITION_MANAGENT_BUY_SINCE_LAST_ORDER = float(os.environ.get('POSITION_MANAGENT_BUY_SINCE_LAST_ORDER', 2))
+POSITION_MANAGMENT_WAIT_TIME = float(os.environ.get('POSITION_MANAGMENT_WAIT_TIME', 60))
 
-def position_managment(): 
-    positions = get_all_positions()
-    if positions:
-        for position in positions:
-            last_order = get_last_order_details(position.symbol)
-            if last_order:
-                manage_postion(position, last_order)
+def position_managment():
+    while True:
+        try:
+            print("Managing Positions")
+            positions = get_all_positions()
+            if positions:
+                for position in positions:
+                    last_order = get_last_order_details(position.symbol)
+                    if last_order:
+                        manage_postion(position, last_order)
 
-    time.sleep(600) # Wait 10 minuites then manage positions again
-    position_managment()
+            time.sleep(POSITION_MANAGMENT_WAIT_TIME)  
+
+        except Exception as error:
+            print(error)
 
 
 def manage_postion(position, last_order):
 
-    time_24_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24) 
+    try:
+        wait_time = datetime.now(timezone.utc) - timedelta(hours=POSITION_MANAGENT_BUY_SINCE_LAST_ORDER) 
 
-    last_order_date = last_order.filled_at
+        last_order_date = last_order.filled_at
 
-    percentage_change = float(position.unrealized_plpc) * 100
-    percentage_change_today = float(position.unrealized_intraday_plpc) * 100
+        if not last_order_date:
+            return 
+        
+        percentage_change = float(position.unrealized_plpc) * 100
+        percentage_change_today = float(position.unrealized_intraday_plpc) * 100
 
-    if (last_order_date < time_24_hours_ago) and (percentage_change > 5) and (percentage_change_today > 0):
-        value_to_buy = math.ceil(float(position.unrealized_intraday_plpc) * float(position.market_value))
-        print("Buying stock due to position managment")
-        buy_stock(position.symbol, value_to_buy)
-            
-    if (percentage_change < -5) or (percentage_change_today < -5):
-        print("Selling stock due to position managment")
-        sell_all_stock(position.symbol)
+        if (last_order_date < wait_time) and (percentage_change > POSITION_MANAGENT_BUY_ALL_TIME_MINIMUM) and (percentage_change_today > POSITION_MANAGENT_BUY_DAY_MINIMUM):
+            value_to_buy = math.ceil(float(position.unrealized_intraday_plpc) * float(position.market_value))
+            print("Buying stock due to position managment", percentage_change, percentage_change_today)
+            buy_stock(position.symbol, value_to_buy)
+                
+        if (percentage_change < POSITION_MANAGMENT_SELL_AT) or (percentage_change_today < POSITION_MANAGMENT_SELL_AT):
+            print("Selling all ", position.symbol, " due to position managment", percentage_change, percentage_change_today)
+            sell_all_stock(position.symbol)
+    except Exception as error:
+        print(error)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # position OBJ 
 # {  
