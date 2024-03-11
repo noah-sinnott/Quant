@@ -38,7 +38,7 @@ def on_news_message(ws, message):
 
 
 def on_error(ws, error):
-    print(f"Error: {error}")
+    print(f"Error  : {error}")
 
 def on_close(ws, close_status_code, close_reason):
     print("### closed ###")
@@ -60,6 +60,8 @@ def run_news_ws():
 if __name__ == "__main__":
     # position_managment()
     # run_news_ws()
+
+    # initialise_meta_trader_5()
 
     news_thread = threading.Thread(target=run_news_ws,daemon=True)
     position_thread = threading.Thread(target=position_managment,daemon=True)

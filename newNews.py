@@ -1,7 +1,8 @@
-from alpacaHandler import buy_stock, sell_all_stock, get_asset
+from alpacaHandler import buy_stock, sell_all_stock, get_account_balance, get_asset_price
 from openAIHandler import send_to_openai 
 from prompts import get_news_review, header_prompt
 import json
+import math
 import os
 
 def new_news(current_event):
@@ -14,13 +15,6 @@ def new_news(current_event):
         return
     
     ticker_symbol = current_event['symbols'][0]
-
-
-    asset = get_asset(ticker_symbol)
-
-    if asset.fractionable == False:
-        return
-      
 
     api_request_body = [
             {"role": "system", "content": header_prompt},
@@ -39,17 +33,22 @@ def new_news(current_event):
         "newsId": current_event["id"]
     }
     json_string = json.dumps(reasoning)
+    print("News Item Found: ", ticker_symbol, " : ", company_impact)
 
-    print(ticker_symbol, company_impact)
-
+    
     NEWS_BUY_AT = json.loads(os.environ.get('NEWS_BUY_AT', '{}'))
     NEWS_SELL_AT = json.loads(os.environ.get('NEWS_SELL_AT', '{}'))
     NEWS_SELL_ALL_AT = float(os.environ.get('NEWS_SELL_ALL_AT', '-50'))
 
+
     buyKeys = sorted(map(int, NEWS_BUY_AT.keys()), reverse=True)
     for key in buyKeys:
-        if company_impact >= key:
-            buy_stock(ticker_symbol, NEWS_BUY_AT[str(key)], json_string)
+        if company_impact >= key:        
+            cash = get_account_balance()
+            value_to_buy = NEWS_BUY_AT[str(key)] * float(cash)
+            stock_value = get_asset_price(ticker_symbol)
+            buyAmount = math.ceil(value_to_buy / stock_value)
+            buy_stock(ticker_symbol, buyAmount, json_string)
             return
 
     if company_impact <= NEWS_SELL_ALL_AT:
