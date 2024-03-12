@@ -6,12 +6,13 @@ from datetime import datetime, timedelta, timezone
 import math
 import os
 
-POSITION_MANAGMENT_SELL_AT = float(os.environ.get('POSITION_MANAGMENT_SELL_AT', -2))
+POSITION_MANAGMENT_SELL_AT = float(os.environ.get('POSITION_MANAGMENT_SELL_AT', -1))
 POSITION_MANAGENT_BUY_DAY_MINIMUM = float(os.environ.get('POSITION_MANAGENT_BUY_DAY_MINIMUM', 1))
 POSITION_MANAGENT_BUY_ALL_TIME_MINIMUM = float(os.environ.get('POSITION_MANAGENT_BUY_ALL_TIME_MINIMUM', 5))
 POSITION_MANAGENT_BUY_SINCE_LAST_ORDER = float(os.environ.get('POSITION_MANAGENT_BUY_SINCE_LAST_ORDER', 2))
 POSITION_MANAGMENT_WAIT_TIME = float(os.environ.get('POSITION_MANAGMENT_WAIT_TIME', 60))
 POSITION_MANAGMENT_BUY_SIZE_UP_PERCENTAGE = float(os.environ.get('POSITION_MANAGMENT_BUY_SIZE_UP_PERCENTAGE', 1))
+POSITION_MANAGMENT_TRAILING_STOP_LOSS = float(os.environ.get('POSITION_MANAGMENT_TRAILING_STOP_LOSS', 1))
 
 def position_managment():
     while True:
@@ -19,7 +20,6 @@ def position_managment():
             positions = get_all_positions()
             if positions:
                 for position in positions:
-                    print(position.symbol)
                     last_order = get_last_order_details(position.symbol)
                     if last_order:
                         manage_postion(position, last_order)
@@ -39,7 +39,7 @@ def manage_postion(position, last_order):
         if not last_order_date:
             return 
         
-        add_stop_loss(position.symbol, position.qty)
+        add_stop_loss(position.symbol, position.qty, POSITION_MANAGMENT_TRAILING_STOP_LOSS)
 
         percentage_change = float(position.unrealized_plpc) * 100
         percentage_change_today = float(position.unrealized_intraday_plpc) * 100

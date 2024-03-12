@@ -59,7 +59,7 @@ def buy_stock(symbol, qty, id = None):
                )    
     print("Bought", qty, symbol)
 
-def add_stop_loss(symbol, qty):
+def add_stop_loss(symbol, qty, pct):
     
     temp = GetOrdersRequest(
                 status=QueryOrderStatus.OPEN,
@@ -76,25 +76,34 @@ def add_stop_loss(symbol, qty):
             
             cancled = trading_client.cancel_order_by_id(order.id)
 
-    trailing_stop_pct = 2  # 2% trailing stop
-
     trailing_stop_order = TrailingStopOrderRequest(
         symbol=symbol,
         qty=qty,
         side=OrderSide.SELL,  # For selling the bought shares
-        trail_percent=trailing_stop_pct,  # Trailing stop percentage
+        trail_percent=pct,  # Trailing stop percentage
         time_in_force=TimeInForce.GTC  # 'Good Till Cancel' order type
     )
 
     trailing_stop_order_result = trading_client.submit_order(order_data=trailing_stop_order)
-    print(f"Updated trailing stop loss of {trailing_stop_pct}% set for {symbol} with total qty {qty}")
+    print(f"Updated trailing stop loss of {pct}% set for {symbol} with total qty {qty}")
 
 
 def get_account_balance():
     temp = trading_client.get_account()
     return temp.cash
 
+
 def sell_all_stock(symbol):
+    
+    temp = GetOrdersRequest(
+            status=QueryOrderStatus.OPEN,
+            direction='desc',
+            symbols=[symbol],
+        )
+    orders = trading_client.get_orders(filter=temp)
+    for order in orders:
+        cancled = trading_client.cancel_order_by_id(order.id)
+
     temp = trading_client.close_position(symbol)
     print("Sold all", symbol)
 
