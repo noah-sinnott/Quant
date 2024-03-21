@@ -1,3 +1,9 @@
-node_modules
-__pycache__
+# Node modules directory
+node_modules/
+
+# Python cache directory
+__pycache__/
+
+# Environment variables files
+*.env*
 .env
